@@ -1,0 +1,50 @@
+Modified Composite [ POProcessing ]
+  Composite properties
+	Property [ productVersion ]
+		No change in old and new value 11.1.1.7.0 
+	Component
+	  Component  [ approveLargeOrder ]
+	    Property [ bpel.config.oneWayDeliveryPolicy ]
+		No change in old and new value async.persist 
+	  Component  [ FulfillmentProcess ]
+	    Property [ bpel.config.oneWayDeliveryPolicy ]
+		No change in old and new value async.persist 
+	Service
+	  Service  [ receivePO ]
+	    Service Bindings
+	  	Binding  [ ws ]
+	    Property [ weblogic.wsee.wsat.transaction.flowOption ]
+		No change in old and new value NEVER 
+	Attribute name=port
+		No change in old and new value http://oracle.com/sca/soapservice/POProcessing/POProcessing/receivePO#wsdl.endpoint(receivePO/execute_pt) 
+	Reference
+	  Reference  [ WriteApprovalResults ]
+	    Reference Bindings
+	  	Binding  [ jca ]
+	    Property [ FileNamingConvention ]
+		Old [ test_%SEQ%.xml ] 
+		New [ orderoutput_%SEQ%.xml ] 
+	  Reference  [ getCreditCardStatus ]
+	    Reference Bindings
+	  	Binding  [ ws ]
+	    Property [ weblogic.wsee.wsat.transaction.flowOption ]
+		No change in old and new value WSDLDriven 
+	Attribute name=port
+		No change in old and new value http://oracle.com/sca/soapservice/CreditCardValidation/validationForCC/getStatusByCC#wsdl.endpoint(getStatusByCC/execute_pt) 
+	Attribute name=location
+		No change in old and new value http://soabpm-vm.site:7001/soa-infra/services/default/validationForCC!1.0/getStatusByCC?WSDL 
+	  Reference  [ JMS_USPS ]
+	    Reference Bindings
+	  	Binding  [ jca ]
+	  Reference  [ JMS_UPS ]
+	    Reference Bindings
+	  	Binding  [ jca ]
+	  Reference  [ JMS_FedEx ]
+	    Reference Bindings
+	  	Binding  [ jca ]
+---End Match for composite [ POProcessing ] in config plan---
+Checking for replacement in wsdl and schema files
+	WSDL WriteApprovalResults_file.jca JCA properties 
+	Property [ PhysicalDirectory ]
+		Old Value [ /media/sf_SharedFolder/ ] 
+		New Value [ /media/sf_SharedFolder/Out ] 

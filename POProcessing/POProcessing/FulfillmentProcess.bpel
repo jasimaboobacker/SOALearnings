@@ -1,0 +1,210 @@
+<?xml version = "1.0" encoding = "UTF-8" ?>
+<!--
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  Oracle JDeveloper BPEL Designer 
+  
+  Created: Sat Mar 07 11:58:48 IST 2015
+  Author:  jasimaboobacker
+  Type: BPEL 1.1 Process
+  Purpose: Asynchronous BPEL Process
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+-->
+<process name="FulfillmentProcess"
+         targetNamespace="http://xmlns.oracle.com/POProcessing/POProcessing/FulfillmentProcess"
+         xmlns="http://schemas.xmlsoap.org/ws/2003/03/business-process/"
+         xmlns:client="http://xmlns.oracle.com/POProcessing/POProcessing/FulfillmentProcess"
+         xmlns:ora="http://schemas.oracle.com/xpath/extension"
+         xmlns:bpelx="http://schemas.oracle.com/bpel/extension"
+         xmlns:bpws="http://schemas.xmlsoap.org/ws/2003/03/business-process/"
+         xmlns:ns1="http://xmlns.oracle.com/FulfillmentRules/OracleRulesFulfillment"
+         xmlns:ns3="http://xmlns.oracle.com/ns/fulfillment"
+         xmlns:bpel2="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+         xmlns:ns2="http://xmlns.oracle.com/bpel"
+         xmlns:ns4="http://xmlns.oracle.com/pcbpel/adapter/jms/POProcessing/POProcessing/JMS_FedEx"
+         xmlns:ns5="http://xmlns.oracle.com/pcbpel/adapter/jms/POProcessing/POProcessing/JMS_USPS"
+         xmlns:ns6="http://xmlns.oracle.com/pcbpel/adapter/jms/POProcessing/POProcessing/JMS_UPS"
+         xmlns:xp20="http://www.oracle.com/XSL/Transform/java/oracle.tip.pc.services.functions.Xpath20"
+         xmlns:oraext="http://www.oracle.com/XSL/Transform/java/oracle.tip.pc.services.functions.ExtFunc"
+         xmlns:dvm="http://www.oracle.com/XSL/Transform/java/oracle.tip.dvm.LookupValue"
+         xmlns:hwf="http://xmlns.oracle.com/bpel/workflow/xpath"
+         xmlns:ids="http://xmlns.oracle.com/bpel/services/IdentityService/xpath"
+         xmlns:bpm="http://xmlns.oracle.com/bpmn20/extensions"
+         xmlns:xdk="http://schemas.oracle.com/bpel/extension/xpath/function/xdk"
+         xmlns:xref="http://www.oracle.com/XSL/Transform/java/oracle.tip.xref.xpath.XRefXPathFunctions"
+         xmlns:ldap="http://schemas.oracle.com/xpath/extension/ldap">
+
+    <!-- 
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        PARTNERLINKS                                                      
+        List of services participating in this BPEL process               
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    --> 
+    <partnerLinks>
+        <!-- 
+      The 'client' role represents the requester of this service. It is 
+      used for callback. The location and correlation information associated
+      with the client role are automatically set using WS-Addressing.
+    -->
+        <partnerLink name="fulfillmentprocess_client" partnerLinkType="client:FulfillmentProcess" myRole="FulfillmentProcessProvider" partnerRole="FulfillmentProcessRequester"/>
+        <partnerLink name="FulfillmentRules.OracleRulesFulfillment"
+                     partnerLinkType="ns1:FulfillmentRules.OracleRulesFulfillment"
+                     partnerRole="IDecisionService"/>
+        <partnerLink name="JMS_FedEx" partnerLinkType="ns4:Produce_Message_plt"
+                     partnerRole="Produce_Message_role"/>
+        <partnerLink name="JMS_USPS" partnerLinkType="ns5:Produce_Message_plt"
+                     partnerRole="Produce_Message_role"/>
+        <partnerLink name="JMS_UPS" partnerLinkType="ns6:Produce_Message_plt"
+                     partnerRole="Produce_Message_role"/>
+    </partnerLinks>
+
+    <!-- 
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        VARIABLES                                                        
+        List of messages and XML documents used within this BPEL process 
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    -->
+    <variables>
+        <!-- Reference to the message passed as input during initiation -->
+        <variable name="inputVariable" messageType="client:FulfillmentProcessRequestMessage"/>
+
+        <!-- Reference to the message that will be sent back to the requester during callback -->
+        <variable name="outputVariable" messageType="client:FulfillmentProcessResponseMessage"/>
+        <variable name="Invoke_USPS_Produce_Message_InputVariable"
+                  messageType="ns5:Produce_Message_msg"/>
+        <variable name="Invoke_UPS_Produce_Message_InputVariable"
+                  messageType="ns6:Produce_Message_msg"/>
+        <variable name="Invoke_FedEx_Produce_Message_InputVariable"
+                  messageType="ns4:Produce_Message_msg"/>
+    </variables>
+
+    <!-- 
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+       ORCHESTRATION LOGIC                                               
+       Set of activities coordinating the flow of messages across the    
+       services integrated within this business process                  
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    -->
+    <sequence name="main">
+        <!-- Receive input from requestor. (Note: This maps to operation defined in FulfillmentProcess.wsdl) -->
+        <receive name="receiveInput" partnerLink="fulfillmentprocess_client" portType="client:FulfillmentProcess" operation="process" variable="inputVariable" createInstance="yes"/>
+        <scope name="Rule1" variableAccessSerializable="no">
+            <bpelx:annotation>
+                <bpelx:pattern patternName="bpelx:decide"></bpelx:pattern>
+            </bpelx:annotation>
+            <variables>
+                <variable name="dsIn"
+                          messageType="ns1:callFunctionStatelessMessage"/>
+                <variable name="dsOut"
+                          messageType="ns1:callFunctionStatelessDecisionMessage"/>
+            </variables>
+            <sequence name="Sequence1">
+                <assign name="Facts_To_Rule_Service">
+                    <copy>
+                        <from variable="inputVariable" part="payload"
+                              query="/ns3:Fulfillment"/>
+                        <to variable="dsIn" part="payload"
+                            query="/ns1:callFunctionStateless/ns1:parameterList/ns3:Fulfillment"/>
+                    </copy>
+                </assign>
+                <assign name="BPEL_Header">
+                    <copy>
+                        <from expression='"OracleRulesFulfillment"'/>
+                        <to variable="dsIn" part="payload" query="@name"/>
+                    </copy>
+                </assign>
+                <invoke name="Invoke"
+                        partnerLink="FulfillmentRules.OracleRulesFulfillment"
+                        portType="ns1:IDecisionService"
+                        operation="callFunctionStateless" inputVariable="dsIn"
+                        outputVariable="dsOut"/>
+                <assign name="Rule_Service_To_Facts">
+                    <copy>
+                        <from variable="dsOut" part="payload"
+                              query="/ns1:callFunctionStatelessDecision/ns1:resultList/ns3:CarrierSelection"/>
+                        <to variable="outputVariable" part="payload"
+                            query="/ns3:CarrierSelection"/>
+                    </copy>
+                </assign>
+            </sequence>
+        </scope>
+        <switch name="Switch1">
+            <case condition="bpws:getVariableData('outputVariable','payload','/ns3:CarrierSelection/ns3:carrier') = 'FedEx'">
+                <bpelx:annotation>
+                    <bpelx:general>
+                        <bpelx:property name="userLabel">
+                            <![CDATA[FedEx]]>
+                        </bpelx:property>
+                    </bpelx:general>
+                </bpelx:annotation>
+                <sequence name="Sequence2">
+                    <assign name="Assign1">
+                        <copy>
+                            <from variable="inputVariable" part="payload"
+                                  query="/ns3:Fulfillment"/>
+                            <to variable="Invoke_FedEx_Produce_Message_InputVariable"
+                                part="body" query="/ns3:Fulfillment"/>
+                        </copy>
+                    </assign>
+                    <invoke name="Invoke_FedEx" bpelx:invokeAsDetail="no"
+                            inputVariable="Invoke_FedEx_Produce_Message_InputVariable"
+                            partnerLink="JMS_FedEx"
+                            portType="ns4:Produce_Message_ptt"
+                            operation="Produce_Message"/>
+                </sequence>
+            </case>
+            <case condition="bpws:getVariableData('outputVariable','payload','/ns3:CarrierSelection/ns3:carrier') = 'UPS'">
+                <bpelx:annotation>
+                    <bpelx:general>
+                        <bpelx:property name="userLabel">
+                            <![CDATA[UPS]]>
+                        </bpelx:property>
+                    </bpelx:general>
+                </bpelx:annotation>
+                <sequence name="Sequence3">
+                    <assign name="Assign2">
+                        <copy>
+                            <from variable="inputVariable" part="payload"
+                                  query="/ns3:Fulfillment"/>
+                            <to variable="Invoke_UPS_Produce_Message_InputVariable"
+                                part="body" query="/ns3:Fulfillment"/>
+                        </copy>
+                    </assign>
+                    <invoke name="Invoke_UPS"
+                            inputVariable="Invoke_UPS_Produce_Message_InputVariable"
+                            partnerLink="JMS_UPS"
+                            portType="ns6:Produce_Message_ptt"
+                            operation="Produce_Message"
+                            bpelx:invokeAsDetail="no"/>
+                </sequence>
+            </case>
+            <case condition="bpws:getVariableData('outputVariable','payload','/ns3:CarrierSelection/ns3:carrier') = USPS">
+                <bpelx:annotation>
+                    <bpelx:general>
+                        <bpelx:property name="userLabel">
+                            <![CDATA[USPS]]>
+                        </bpelx:property>
+                    </bpelx:general>
+                </bpelx:annotation>
+                <sequence name="Sequence4">
+                    <assign name="Assign3">
+                        <copy>
+                            <from variable="inputVariable" part="payload"
+                                  query="/ns3:Fulfillment"/>
+                            <to variable="Invoke_USPS_Produce_Message_InputVariable"
+                                part="body" query="/ns3:Fulfillment"/>
+                        </copy>
+                    </assign>
+                    <invoke name="Invoke_USPS" bpelx:invokeAsDetail="no"
+                            inputVariable="Invoke_USPS_Produce_Message_InputVariable"
+                            partnerLink="JMS_USPS"
+                            portType="ns5:Produce_Message_ptt"
+                            operation="Produce_Message"/>
+                </sequence>
+            </case>
+        </switch>
+        <!-- 
+          Asynchronous callback to the requester. (Note: the callback location and correlation id is transparently handled using WS-addressing.)
+        -->
+        <invoke name="callbackClient" partnerLink="fulfillmentprocess_client" portType="client:FulfillmentProcessCallback" operation="processResponse" inputVariable="outputVariable"/>
+    </sequence>
+</process>

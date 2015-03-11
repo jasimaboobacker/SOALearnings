@@ -1,0 +1,19 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<BC4JConfig version="11.1" xmlns="http://xmlns.oracle.com/bc4j/configuration">
+   <AppModuleConfigBag ApplicationName="customerapp.CustomerSDOAppModule" default="CustomerSDOService">
+      <AppModuleConfig name="CustomerSDOAppModuleLocal" ApplicationName="customerapp.CustomerSDOAppModule" DeployPlatform="LOCAL" jbo.project="customerapp.CustomerSDO">
+         <Security AppModuleJndiName="customerapp.CustomerSDOAppModule"/>
+         <Custom JDBCDataSource="java:comp/env/jdbc/soademoDS"/>
+      </AppModuleConfig>
+      <AppModuleConfig name="CustomerSDOAppModuleShared" ApplicationName="customerapp.CustomerSDOAppModule" DeployPlatform="LOCAL" jbo.project="customerapp.CustomerSDO">
+         <AM-Pooling jbo.ampool.maxpoolsize="1" jbo.ampool.isuseexclusive="false"/>
+         <Security AppModuleJndiName="customerapp.CustomerSDOAppModule"/>
+         <Custom JDBCDataSource="java:comp/env/jdbc/soademoDS"/>
+      </AppModuleConfig>
+      <AppModuleConfig DeployPlatform="SI" jbo.project="customerapp.CustomerSDO" name="CustomerSDOService" ApplicationName="customerapp.CustomerSDOAppModule">
+         <Database jbo.locking.mode="optimistic"/>
+         <Security AppModuleJndiName="customerapp.CustomerSDOAppModule"/>
+         <Custom JDBCDataSource="jdbc/soademoDatabase"/>
+      </AppModuleConfig>
+   </AppModuleConfigBag>
+</BC4JConfig>

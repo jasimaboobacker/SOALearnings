@@ -1,0 +1,42 @@
+Mar 11, 2015 9:37:55 PM oracle.mds
+NOTIFICATION: PManager instance is created without multitenancy support as JVM flag "oracle.multitenant.enabled" is not set to enable multitenancy support.
+Mar 11, 2015 9:37:55 PM oracle.security.jps.internal.config.xml.XmlConfigurationFactory initDefaultConfiguration
+SEVERE: java.io.FileNotFoundException: .\config\jps-config.xml (The system cannot find the path specified)
+Mar 11, 2015 9:37:55 PM oracle.mds
+NOTIFICATION: Auditing is disabled for component MDS.
+Mar 11, 2015 9:38:06 PM oracle.fabric.common.wsdl.SchemaManager isIncrementalBuildSupported
+INFO: XMLSchema incremental build enabled.
+Mar 11, 2015 9:38:07 PM com.collaxa.cube.CubeLogger info
+INFO: validating "approveLargeOrder.bpel" ...
+Mar 11, 2015 9:38:07 PM oracle.integration.platform.blocks.FabricConfigManager <clinit>
+WARNING: JRF is unable to determine the current application server platform.
+Mar 11, 2015 9:38:07 PM oracle.integration.platform.blocks.WLSPlatformConfigurationProvider <clinit>
+WARNING: JRF is unable to determine the current application server platform.
+Mar 11, 2015 9:38:08 PM oracle.fabric.common.wsdl.SchemaManager buildXDKSchema
+INFO: Namespace specified for the lookup belongs to a default namespace URI: http://www.w3.org/2001/XMLSchema. Will not attempt to build the schema model for it...
+Mar 11, 2015 9:38:08 PM oracle.fabric.common.wsdl.SchemaManager buildXDKSchema
+INFO: Namespace specified for the lookup belongs to a default namespace URI: http://www.w3.org/2001/XMLSchema. Will not attempt to build the schema model for it...
+Mar 11, 2015 9:38:08 PM oracle.fabric.common.wsdl.SchemaManager buildXDKSchema
+INFO: Namespace specified for the lookup belongs to a default namespace URI: http://www.w3.org/2001/XMLSchema. Will not attempt to build the schema model for it...
+Mar 11, 2015 9:38:08 PM com.collaxa.cube.CubeLogger info
+INFO: Composed "approveLargeOrder" in 100.8 milliseconds [nodes 55=2+53, 545.7 nodes/sec]
+Mar 11, 2015 9:38:09 PM com.collaxa.cube.CubeLogger info
+INFO: Compiled "approveLargeOrder" in 1.178 seconds
+Mar 11, 2015 9:38:09 PM com.collaxa.cube.CubeLogger info
+INFO: Gathered 6 files in 0.9 milliseconds
+
+Mar 11, 2015 9:38:09 PM com.collaxa.cube.CubeLogger info
+INFO: Packaged "approveLargeOrder" in 26.0 milliseconds
+
+Mar 11, 2015 9:38:09 PM com.collaxa.cube.CubeLogger info
+INFO: validating "FulfillmentProcess.bpel" ...
+Mar 11, 2015 9:38:09 PM com.collaxa.cube.CubeLogger info
+INFO: Composed "FulfillmentProcess" in 31.1 milliseconds [nodes 25=1+24, 804.8 nodes/sec]
+Mar 11, 2015 9:38:09 PM com.collaxa.cube.CubeLogger info
+INFO: Compiled "FulfillmentProcess" in 409.8 milliseconds
+Mar 11, 2015 9:38:09 PM com.collaxa.cube.CubeLogger info
+INFO: Gathered 5 files in 0.8 milliseconds
+
+Mar 11, 2015 9:38:09 PM com.collaxa.cube.CubeLogger info
+INFO: Packaged "FulfillmentProcess" in 20.4 milliseconds
+

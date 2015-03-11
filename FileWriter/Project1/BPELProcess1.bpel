@@ -1,0 +1,187 @@
+<?xml version = "1.0" encoding = "UTF-8" ?>
+<!--
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  Oracle JDeveloper BPEL Designer 
+  
+  Created: Fri Mar 06 23:02:16 IST 2015
+  Author:  jasimaboobacker
+  Type: BPEL 1.1 Process
+  Purpose: Asynchronous BPEL Process
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+-->
+<process name="BPELProcess1"
+         targetNamespace="http://xmlns.oracle.com/FileWriter/Project1/BPELProcess1"
+         xmlns="http://schemas.xmlsoap.org/ws/2003/03/business-process/"
+         xmlns:client="http://xmlns.oracle.com/FileWriter/Project1/BPELProcess1"
+         xmlns:ora="http://schemas.oracle.com/xpath/extension"
+         xmlns:bpelx="http://schemas.oracle.com/bpel/extension"
+         xmlns:bpws="http://schemas.xmlsoap.org/ws/2003/03/business-process/"
+         xmlns:ns1="http://xmlns.oracle.com/pcbpel/adapter/file/FileWriter/Project1/write"
+         xmlns:bpel2="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+         xmlns:task="http://xmlns.oracle.com/bpel/workflow/task"
+         xmlns:taskservice="http://xmlns.oracle.com/bpel/workflow/taskService"
+         xmlns:wfcommon="http://xmlns.oracle.com/bpel/workflow/common">
+
+    <!-- 
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        PARTNERLINKS                                                      
+        List of services participating in this BPEL process               
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    --> 
+    <partnerLinks>
+        <!-- 
+      The 'client' role represents the requester of this service. It is 
+      used for callback. The location and correlation information associated
+      with the client role are automatically set using WS-Addressing.
+    -->
+        <partnerLink name="bpelprocess1_client" partnerLinkType="client:BPELProcess1" myRole="BPELProcess1Provider" partnerRole="BPELProcess1Requester"/>
+        <partnerLink name="Humantask1.TaskService_1"
+                     partnerLinkType="taskservice:TaskService"
+                     partnerRole="TaskService"
+                     myRole="TaskServiceCallbackListener"/>
+    </partnerLinks>
+
+    <!-- 
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        VARIABLES                                                        
+        List of messages and XML documents used within this BPEL process 
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    -->
+    <variables>
+        <!-- Reference to the message passed as input during initiation -->
+        <variable name="inputVariable" messageType="client:BPELProcess1RequestMessage"/>
+
+        <!-- Reference to the message that will be sent back to the requester during callback -->
+        <variable name="outputVariable" messageType="client:BPELProcess1ResponseMessage"/>
+        <variable name="receiveInput_process_InputVariable"
+                  messageType="client:BPELProcess1RequestMessage"/>
+        <variable name="Humantask11_globalVariable"
+                  messageType="taskservice:taskMessage"/>
+    </variables>
+
+    <!-- 
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+       ORCHESTRATION LOGIC                                               
+       Set of activities coordinating the flow of messages across the    
+       services integrated within this business process                  
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    -->
+    <sequence name="main">
+        <!-- Receive input from requestor. (Note: This maps to operation defined in BPELProcess1.wsdl) -->
+        <receive name="receiveInput" partnerLink="bpelprocess1_client" portType="client:BPELProcess1" operation="process"
+                 variable="receiveInput_process_InputVariable" createInstance="yes"/>
+        <scope name="Humantask11"
+               xmlns:wf="http://schemas.oracle.com/bpel/extensions/workflow"
+               wf:key="Humantask11_globalVariable">
+            <bpelx:annotation>
+                <bpelx:pattern patternName="bpelx:workflow"></bpelx:pattern>
+            </bpelx:annotation>
+            <variables>
+                <variable name="initiateTaskInput"
+                          messageType="taskservice:initiateTaskMessage"/>
+                <variable name="initiateTaskResponseMessage"
+                          messageType="taskservice:initiateTaskResponseMessage"/>
+            </variables>
+            <sequence>
+                <assign name="Humantask11_AssignTaskAttributes">
+                    <copy>
+                        <from expression="number(3)"/>
+                        <to variable="initiateTaskInput" part="payload"
+                            query="/taskservice:initiateTask/task:task/task:priority"/>
+                    </copy>
+                    <copy>
+                        <from><payload xmlns="http://xmlns.oracle.com/bpel/workflow/task">
+	<Order xmlns="http://xmlns.oracle.com/ns/order"/> 
+</payload></from>
+                        <to variable="initiateTaskInput" part="payload"
+                            query="/taskservice:initiateTask/task:task/task:payload"/>
+                    </copy>
+                    <copy>
+                        <from variable="receiveInput_process_InputVariable"
+                              part="payload"
+                              query="/client:process/client:input"/>
+                        <to variable="initiateTaskInput" part="payload"
+                            query="/taskservice:initiateTask/task:task/task:payload/null:Order"/>
+                    </copy>
+                </assign>
+                <invoke name="initiateTask_Humantask11"
+                        partnerLink="Humantask1.TaskService_1"
+                        operation="initiateTask"
+                        portType="taskservice:TaskService"
+                        inputVariable="initiateTaskInput"
+                        outputVariable="initiateTaskResponseMessage"/>
+                <receive name="receiveCompletedTask_Humantask11"
+                         partnerLink="Humantask1.TaskService_1"
+                         portType="taskservice:TaskServiceCallback"
+                         operation="onTaskCompleted"
+                         variable="Humantask11_globalVariable"
+                         createInstance="no"/>
+            </sequence>
+        </scope>
+        <switch name="taskSwitch">
+            <case condition="$Humantask11_globalVariable.payload/task:systemAttributes/task:outcome = 'REJECT'">
+                <bpelx:annotation>
+                    <bpelx:pattern>Task outcome is REJECT</bpelx:pattern>
+                    <bpelx:general>
+                        <bpelx:property name="userLabel">
+                            <![CDATA[Task outcome is REJECT]]>
+                        </bpelx:property>
+                    </bpelx:general>
+                </bpelx:annotation>
+                <sequence>
+                    <assign>
+                        <copy>
+                            <from variable="Humantask11_globalVariable"
+                                  part="payload"
+                                  query="/task:task/task:payload/null:Order"/>
+                            <to variable="receiveInput_process_InputVariable"
+                                part="payload"
+                                query="/client:process/client:input"/>
+                        </copy>
+                    </assign>
+                </sequence>
+            </case>
+            <case condition="$Humantask11_globalVariable.payload/task:systemAttributes/task:outcome = 'APPROVE'">
+                <bpelx:annotation>
+                    <bpelx:pattern>Task outcome is APPROVE</bpelx:pattern>
+                    <bpelx:general>
+                        <bpelx:property name="userLabel">
+                            <![CDATA[Task outcome is APPROVE]]>
+                        </bpelx:property>
+                    </bpelx:general>
+                </bpelx:annotation>
+                <sequence>
+                    <assign>
+                        <copy>
+                            <from variable="Humantask11_globalVariable"
+                                  part="payload"
+                                  query="/task:task/task:payload/null:Order"/>
+                            <to variable="receiveInput_process_InputVariable"
+                                part="payload"
+                                query="/client:process/client:input"/>
+                        </copy>
+                    </assign>
+                </sequence>
+            </case>
+            <otherwise>
+                <sequence>
+                    <assign>
+                        <copy>
+                            <from variable="Humantask11_globalVariable"
+                                  part="payload"
+                                  query="/task:task/task:payload/null:Order"/>
+                            <to variable="receiveInput_process_InputVariable"
+                                part="payload"
+                                query="/client:process/client:input"/>
+                        </copy>
+                    </assign>
+                </sequence>
+            </otherwise>
+        </switch>
+        <!-- 
+          Asynchronous callback to the requester. (Note: the callback location and correlation id is transparently handled using WS-addressing.)
+        -->
+        <invoke name="callbackClient" partnerLink="bpelprocess1_client" portType="client:BPELProcess1Callback" operation="processResponse" inputVariable="outputVariable"
+                bpelx:invokeAsDetail="no"/>
+    </sequence>
+</process>
